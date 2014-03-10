@@ -4,6 +4,13 @@ Resource
 Resource provides Sounds, Sprites, SpriteSheet support, and uploading and
 reading resource packs.
 
+TODO: The main conflict is that to serialize and deserialize data requires
+game object data to "know" about global state such as resources.
+
+Maybe each GameObject knows it's own resource provider?
+
+Maybe just use a shared resource namespace...
+
 Example
 -------
 
