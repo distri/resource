@@ -18,7 +18,7 @@
     "main.coffee.md": {
       "path": "main.coffee.md",
       "mode": "100644",
-      "content": "Resource\n========\n\nResource provides Sounds, Sprites, SpriteSheet support, and uploading and\nreading resource packs.\n\nExample\n-------\n\nThis looks like a terrible example...\n\n>     Resource = require(\"resource\")\n>     data = require \"./resources\"\n>     {Sprite, Sound} = Resource(data)\n\n    Resource = (data) ->\n      # TODO: Wrap with load by name resource resolvers\n      Sprite: require \"sprite\"\n      Sound: require \"sound\"\n\n    module.exports = Resource\n",
+      "content": "Resource\n========\n\nResource provides Sounds, Sprites, SpriteSheet support, and uploading and\nreading resource packs.\n\nTODO: The main conflict is that to serialize and deserialize data requires\ngame object data to \"know\" about global state such as resources.\n\nMaybe each GameObject knows it's own resource provider?\n\nMaybe just use a shared resource namespace...\n\nExample\n-------\n\nThis looks like a terrible example...\n\n>     Resource = require(\"resource\")\n>     data = require \"./resources\"\n>     {Sprite, Sound} = Resource(data)\n\n    Resource = (data) ->\n      # TODO: Wrap with load by name resource resolvers\n      Sprite: require \"sprite\"\n      Sound: require \"sound\"\n\n    module.exports = Resource\n",
       "type": "blob"
     }
   },
