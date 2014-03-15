@@ -21,7 +21,7 @@ window["distri/resource:master"]({
     "pixie.cson": {
       "path": "pixie.cson",
       "mode": "100644",
-      "content": "version: \"0.1.0\"\ndependencies:\n  sprite: \"distri/sprite:v0.3.0\"\n  audio: \"distri/audio:v0.2.0\"\n",
+      "content": "version: \"0.1.0-alpha.0\"\ndependencies:\n  sprite: \"distri/sprite:v0.3.0\"\n  audio: \"distri/audio:v0.2.0\"\n",
       "type": "blob"
     },
     "test/main.coffee": {
@@ -39,7 +39,7 @@ window["distri/resource:master"]({
     },
     "pixie": {
       "path": "pixie",
-      "content": "module.exports = {\"version\":\"0.1.0\",\"dependencies\":{\"sprite\":\"distri/sprite:v0.3.0\",\"audio\":\"distri/audio:v0.2.0\"}};",
+      "content": "module.exports = {\"version\":\"0.1.0-alpha.0\",\"dependencies\":{\"sprite\":\"distri/sprite:v0.3.0\",\"audio\":\"distri/audio:v0.2.0\"}};",
       "type": "blob"
     },
     "test/main": {
@@ -51,7 +51,7 @@ window["distri/resource:master"]({
   "progenitor": {
     "url": "http://strd6.github.io/editor/"
   },
-  "version": "0.1.0",
+  "version": "0.1.0-alpha.0",
   "entryPoint": "main",
   "repository": {
     "id": 17570235,
