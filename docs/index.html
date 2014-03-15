@@ -32,12 +32,9 @@
               <div class="pilwrap">
                 <a class="pilcrow" href="#section-2">&#182;</a>
               </div>
-              <p>Resource provides Sounds, Sprites, SpriteSheet support, and uploading and
-reading resource packs.</p>
-<p>TODO: The main conflict is that to serialize and deserialize data requires
-game object data to &quot;know&quot; about global state such as resources.</p>
-<p>Maybe each GameObject knows it&#39;s own resource provider?</p>
-<p>Maybe just use a shared resource namespace...</p>
+              <p>Resource provides <code>Sound</code>, <code>Music</code>, and <code>Sprite</code> support.</p>
+<p>TODO: Spritesheets, Animations</p>
+<p>TODO: Uploading to S3</p>
 <h2 id="example">Example</h2>
 
             </div>
@@ -52,20 +49,76 @@ game object data to &quot;know&quot; about global state such as resources.</p>
               <div class="pilwrap">
                 <a class="pilcrow" href="#section-3">&#182;</a>
               </div>
-              <p>This looks like a terrible example...</p>
-<blockquote>
+              <blockquote>
 <pre><code>Resource = require(&quot;resource&quot;)
+
 data = require &quot;./resources&quot;
-{Sprite, Sound} = Resource(data)</code></pre>
+Resource.add(data)
+
+{Music, Sprite, Sound} = Resource</code></pre>
 </blockquote>
 
             </div>
-            <div class="content"><pre><code class="lang-coffeescript"><span class="function"><span class="title">Resource</span></span> = (data) -&gt;
-  <span class="comment"># TODO: Wrap with load by name resource resolvers</span>
-  Sprite: require <span class="string">"sprite"</span>
-  Sound: require <span class="string">"sound"</span>
+            <div class="content"><pre><code class="lang-coffeescript">resources =
+  images: {}
+  sounds: {}
+  music: {}
+
+Sprite = require <span class="string">"sprite"</span>
+Sprite.<span class="function"><span class="title">loadByName</span></span> = (name) -&gt;
+  url = resources.images[name]
+
+  Sprite.fromURL(url)
+
+{Control, Music, Sound} = require <span class="string">"audio"</span>
+
+Sound.<span class="function"><span class="title">play</span></span> = (name) -&gt;
+  Sound.playFromURL(resources.sounds[name])
+
+Music.<span class="function"><span class="title">play</span></span> = (name) -&gt;
+  Music.playFromURL(resources.music[name])
+
+Resource = 
+  add: (additionalResources) -&gt;
+    Object.keys(additionalResources).forEach (type) -&gt;
+      extend resource[type], additionalResources[type]
+  Control: Control
+  Music: Music
+  Sprite: Sprite
+  Sound: Sound
 
 module.exports = Resource</code></pre>
+</div>
+        </li>
+        
+        
+        <li id="section-4">
+            <div class="annotation">
+              <div class="pilwrap">
+                <a class="pilcrow" href="#section-4">&#182;</a>
+              </div>
+              <h2 id="helpers">Helpers</h2>
+
+            </div>
+            <div class="content"><pre><code class="lang-coffeescript">
+</code></pre>
+</div>
+        </li>
+        
+        
+        <li id="section-5">
+            <div class="annotation">
+              <div class="pilwrap">
+                <a class="pilcrow" href="#section-5">&#182;</a>
+              </div>
+              
+            </div>
+            <div class="content"><pre><code class="lang-coffeescript"><span class="function"><span class="title">extend</span></span> = (target, sources...) -&gt;
+  <span class="keyword">for</span> source <span class="keyword">in</span> sources
+    <span class="keyword">for</span> name <span class="keyword">of</span> source
+      target[name] = source[name]
+
+  <span class="keyword">return</span> target</code></pre>
 </div>
         </li>
         
