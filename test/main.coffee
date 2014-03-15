@@ -15,3 +15,5 @@ describe "Resource", ->
 
   it "should allow adding of resources", ->
     assert Resource.add
+      images:
+        duder: "http://example.com/rad.png"

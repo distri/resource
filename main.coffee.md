@@ -3,6 +3,8 @@ Resource
 
 Resource provides `Sound`, `Music`, and `Sprite` support.
 
+TODO: Include Preloader
+
 TODO: Spritesheets, Animations
 
 TODO: Uploading to S3
@@ -36,16 +38,19 @@ Example
     Music.play = (name) ->
       Music.playFromURL(resources.music[name])
 
-    Resource = 
+    self = 
       add: (additionalResources) ->
         Object.keys(additionalResources).forEach (type) ->
-          extend resource[type], additionalResources[type]
+          extend resources[type], additionalResources[type]
+        
+        return self
+
       Control: Control
       Music: Music
       Sprite: Sprite
       Sound: Sound
 
-    module.exports = Resource
+    module.exports = self
 
 Helpers
 -------
