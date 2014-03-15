@@ -15,43 +15,43 @@ window["distri/resource:v0.1.0-alpha.0"]({
     "main.coffee.md": {
       "path": "main.coffee.md",
       "mode": "100644",
-      "content": "Resource\n========\n\nResource provides `Sound`, `Music`, and `Sprite` support.\n\nTODO: Spritesheets, Animations\n\nTODO: Uploading to S3\n\nExample\n-------\n\n>     Resource = require(\"resource\")\n>\n>     data = require \"./resources\"\n>     Resource.add(data)\n>\n>     {Music, Sprite, Sound} = Resource\n\n    resources =\n      images: {}\n      sounds: {}\n      music: {}\n\n    Sprite = require \"sprite\"\n    Sprite.loadByName = (name) ->\n      url = resources.images[name]\n\n      Sprite.fromURL(url)\n\n    {Control, Music, Sound} = require \"audio\"\n\n    Sound.play = (name) ->\n      Sound.playFromURL(resources.sounds[name])\n\n    Music.play = (name) ->\n      Music.playFromURL(resources.music[name])\n\n    Resource = \n      add: (additionalResources) ->\n        Object.keys(additionalResources).forEach (type) ->\n          extend resource[type], additionalResources[type]\n      Control: Control\n      Music: Music\n      Sprite: Sprite\n      Sound: Sound\n\n    module.exports = Resource\n\nHelpers\n-------\n\n    extend = (target, sources...) ->\n      for source in sources\n        for name of source\n          target[name] = source[name]\n\n      return target\n",
+      "content": "Resource\n========\n\nResource provides `Sound`, `Music`, and `Sprite` support.\n\nTODO: Include Preloader\n\nTODO: Spritesheets, Animations\n\nTODO: Uploading to S3\n\nExample\n-------\n\n>     Resource = require(\"resource\")\n>\n>     data = require \"./resources\"\n>     Resource.add(data)\n>\n>     {Music, Sprite, Sound} = Resource\n\n    resources =\n      images: {}\n      sounds: {}\n      music: {}\n\n    Sprite = require \"sprite\"\n    Sprite.loadByName = (name) ->\n      url = resources.images[name]\n\n      Sprite.fromURL(url)\n\n    {Control, Music, Sound} = require \"audio\"\n\n    Sound.play = (name) ->\n      Sound.playFromURL(resources.sounds[name])\n\n    Music.play = (name) ->\n      Music.playFromURL(resources.music[name])\n\n    self = \n      add: (additionalResources) ->\n        Object.keys(additionalResources).forEach (type) ->\n          extend resources[type], additionalResources[type]\n        \n        return self\n\n      Control: Control\n      Music: Music\n      Sprite: Sprite\n      Sound: Sound\n\n    module.exports = self\n\nHelpers\n-------\n\n    extend = (target, sources...) ->\n      for source in sources\n        for name of source\n          target[name] = source[name]\n\n      return target\n",
       "type": "blob"
     },
     "pixie.cson": {
       "path": "pixie.cson",
       "mode": "100644",
-      "content": "version: \"0.1.0-alpha.0\"\ndependencies:\n  sprite: \"distri/sprite:v0.3.0\"\n  audio: \"distri/audio:v0.2.0\"\n",
+      "content": "version: \"0.1.0-alpha.1\"\ndependencies:\n  sprite: \"distri/sprite:v0.3.0\"\n  audio: \"distri/audio:v0.2.0\"\n",
       "type": "blob"
     },
     "test/main.coffee": {
       "path": "test/main.coffee",
       "mode": "100644",
-      "content": "Resource = require \"../main\"\n\ndescribe \"Resource\", ->\n  it \"should expose Control\", ->\n    assert Resource.Control\n\n  it \"should expose Music\", ->\n    assert Resource.Music\n\n  it \"should expose Sprite\", ->\n    assert Resource.Sprite\n\n  it \"should expose Sound\", ->\n    assert Resource.Sound\n\n  it \"should allow adding of resources\", ->\n    assert Resource.add\n",
+      "content": "Resource = require \"../main\"\n\ndescribe \"Resource\", ->\n  it \"should expose Control\", ->\n    assert Resource.Control\n\n  it \"should expose Music\", ->\n    assert Resource.Music\n\n  it \"should expose Sprite\", ->\n    assert Resource.Sprite\n\n  it \"should expose Sound\", ->\n    assert Resource.Sound\n\n  it \"should allow adding of resources\", ->\n    assert Resource.add\n      images:\n        duder: \"http://example.com/rad.png\"\n",
       "type": "blob"
     }
   },
   "distribution": {
     "main": {
       "path": "main",
-      "content": "(function() {\n  var Control, Music, Resource, Sound, Sprite, extend, resources, _ref,\n    __slice = [].slice;\n\n  resources = {\n    images: {},\n    sounds: {},\n    music: {}\n  };\n\n  Sprite = require(\"sprite\");\n\n  Sprite.loadByName = function(name) {\n    var url;\n    url = resources.images[name];\n    return Sprite.fromURL(url);\n  };\n\n  _ref = require(\"audio\"), Control = _ref.Control, Music = _ref.Music, Sound = _ref.Sound;\n\n  Sound.play = function(name) {\n    return Sound.playFromURL(resources.sounds[name]);\n  };\n\n  Music.play = function(name) {\n    return Music.playFromURL(resources.music[name]);\n  };\n\n  Resource = {\n    add: function(additionalResources) {\n      return Object.keys(additionalResources).forEach(function(type) {\n        return extend(resource[type], additionalResources[type]);\n      });\n    },\n    Control: Control,\n    Music: Music,\n    Sprite: Sprite,\n    Sound: Sound\n  };\n\n  module.exports = Resource;\n\n  extend = function() {\n    var name, source, sources, target, _i, _len;\n    target = arguments[0], sources = 2 <= arguments.length ? __slice.call(arguments, 1) : [];\n    for (_i = 0, _len = sources.length; _i < _len; _i++) {\n      source = sources[_i];\n      for (name in source) {\n        target[name] = source[name];\n      }\n    }\n    return target;\n  };\n\n}).call(this);\n\n//# sourceURL=main.coffee",
+      "content": "(function() {\n  var Control, Music, Sound, Sprite, extend, resources, self, _ref,\n    __slice = [].slice;\n\n  resources = {\n    images: {},\n    sounds: {},\n    music: {}\n  };\n\n  Sprite = require(\"sprite\");\n\n  Sprite.loadByName = function(name) {\n    var url;\n    url = resources.images[name];\n    return Sprite.fromURL(url);\n  };\n\n  _ref = require(\"audio\"), Control = _ref.Control, Music = _ref.Music, Sound = _ref.Sound;\n\n  Sound.play = function(name) {\n    return Sound.playFromURL(resources.sounds[name]);\n  };\n\n  Music.play = function(name) {\n    return Music.playFromURL(resources.music[name]);\n  };\n\n  self = {\n    add: function(additionalResources) {\n      Object.keys(additionalResources).forEach(function(type) {\n        return extend(resources[type], additionalResources[type]);\n      });\n      return self;\n    },\n    Control: Control,\n    Music: Music,\n    Sprite: Sprite,\n    Sound: Sound\n  };\n\n  module.exports = self;\n\n  extend = function() {\n    var name, source, sources, target, _i, _len;\n    target = arguments[0], sources = 2 <= arguments.length ? __slice.call(arguments, 1) : [];\n    for (_i = 0, _len = sources.length; _i < _len; _i++) {\n      source = sources[_i];\n      for (name in source) {\n        target[name] = source[name];\n      }\n    }\n    return target;\n  };\n\n}).call(this);\n\n//# sourceURL=main.coffee",
       "type": "blob"
     },
     "pixie": {
       "path": "pixie",
-      "content": "module.exports = {\"version\":\"0.1.0-alpha.0\",\"dependencies\":{\"sprite\":\"distri/sprite:v0.3.0\",\"audio\":\"distri/audio:v0.2.0\"}};",
+      "content": "module.exports = {\"version\":\"0.1.0-alpha.1\",\"dependencies\":{\"sprite\":\"distri/sprite:v0.3.0\",\"audio\":\"distri/audio:v0.2.0\"}};",
       "type": "blob"
     },
     "test/main": {
       "path": "test/main",
-      "content": "(function() {\n  var Resource;\n\n  Resource = require(\"../main\");\n\n  describe(\"Resource\", function() {\n    it(\"should expose Control\", function() {\n      return assert(Resource.Control);\n    });\n    it(\"should expose Music\", function() {\n      return assert(Resource.Music);\n    });\n    it(\"should expose Sprite\", function() {\n      return assert(Resource.Sprite);\n    });\n    it(\"should expose Sound\", function() {\n      return assert(Resource.Sound);\n    });\n    return it(\"should allow adding of resources\", function() {\n      return assert(Resource.add);\n    });\n  });\n\n}).call(this);\n\n//# sourceURL=test/main.coffee",
+      "content": "(function() {\n  var Resource;\n\n  Resource = require(\"../main\");\n\n  describe(\"Resource\", function() {\n    it(\"should expose Control\", function() {\n      return assert(Resource.Control);\n    });\n    it(\"should expose Music\", function() {\n      return assert(Resource.Music);\n    });\n    it(\"should expose Sprite\", function() {\n      return assert(Resource.Sprite);\n    });\n    it(\"should expose Sound\", function() {\n      return assert(Resource.Sound);\n    });\n    return it(\"should allow adding of resources\", function() {\n      return assert(Resource.add({\n        images: {\n          duder: \"http://example.com/rad.png\"\n        }\n      }));\n    });\n  });\n\n}).call(this);\n\n//# sourceURL=test/main.coffee",
       "type": "blob"
     }
   },
   "progenitor": {
     "url": "http://strd6.github.io/editor/"
   },
-  "version": "0.1.0-alpha.0",
+  "version": "0.1.0-alpha.1",
   "entryPoint": "main",
   "repository": {
     "id": 17570235,
