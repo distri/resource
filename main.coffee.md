@@ -1,28 +1,58 @@
 Resource
 ========
 
-Resource provides Sounds, Sprites, SpriteSheet support, and uploading and
-reading resource packs.
+Resource provides `Sound`, `Music`, and `Sprite` support.
 
-TODO: The main conflict is that to serialize and deserialize data requires
-game object data to "know" about global state such as resources.
+TODO: Spritesheets, Animations
 
-Maybe each GameObject knows it's own resource provider?
-
-Maybe just use a shared resource namespace...
+TODO: Uploading to S3
 
 Example
 -------
 
-This looks like a terrible example...
-
 >     Resource = require("resource")
+>
 >     data = require "./resources"
->     {Sprite, Sound} = Resource(data)
+>     Resource.add(data)
+>
+>     {Music, Sprite, Sound} = Resource
 
-    Resource = (data) ->
-      # TODO: Wrap with load by name resource resolvers
-      Sprite: require "sprite"
-      Sound: require "sound"
+    resources =
+      images: {}
+      sounds: {}
+      music: {}
+
+    Sprite = require "sprite"
+    Sprite.loadByName = (name) ->
+      url = resources.images[name]
+
+      Sprite.fromURL(url)
+
+    {Control, Music, Sound} = require "audio"
+
+    Sound.play = (name) ->
+      Sound.playFromURL(resources.sounds[name])
+
+    Music.play = (name) ->
+      Music.playFromURL(resources.music[name])
+
+    Resource = 
+      add: (additionalResources) ->
+        Object.keys(additionalResources).forEach (type) ->
+          extend resource[type], additionalResources[type]
+      Control: Control
+      Music: Music
+      Sprite: Sprite
+      Sound: Sound
 
     module.exports = Resource
+
+Helpers
+-------
+
+    extend = (target, sources...) ->
+      for source in sources
+        for name of source
+          target[name] = source[name]
+
+      return target
