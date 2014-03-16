@@ -94,7 +94,8 @@ TODO: Better error handling, duh!
       # TODO: Error handling for sprites
       # NOTE: Using Sprite constructor because otherwise we get flickering
 
-      Sprite.load url, success
+      Sprite.load url, ->
+        success(url)
 
 Chrome Apps can't display arbitrary image src urls, so we have this
 workaround.
