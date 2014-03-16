@@ -125,7 +125,8 @@ module.exports =
   <span class="comment"># TODO: Error handling for sprites</span>
   <span class="comment"># NOTE: Using Sprite constructor because otherwise we get flickering</span>
 
-  Sprite.load url, success</code></pre>
+  Sprite.load url, -&gt;
+    success(url)</code></pre>
 </div>
         </li>
         
