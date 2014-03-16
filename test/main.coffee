@@ -17,3 +17,6 @@ describe "Resource", ->
     assert Resource.add
       images:
         duder: "http://example.com/rad.png"
+
+  it "should do some preloading", ->
+    assert Resource.preload

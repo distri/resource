@@ -19,6 +19,8 @@ Example
 >
 >     {Music, Sprite, Sound} = Resource
 
+    Preloader = require "./preloader"
+
     resources =
       images: {}
       sounds: {}
@@ -44,6 +46,12 @@ Example
           extend resources[type], additionalResources[type]
         
         return self
+
+      preload: ({complete, progress}) ->
+        Preloader.preload
+          resources: resources
+          complete: complete
+          progress: progress
 
       Control: Control
       Music: Music
