@@ -44,7 +44,7 @@ Example
       add: (additionalResources) ->
         Object.keys(additionalResources).forEach (type) ->
           extend resources[type], additionalResources[type]
-        
+
         return self
 
       preload: ({complete, progress}) ->
@@ -52,6 +52,8 @@ Example
           resources: resources
           complete: complete
           progress: progress
+
+        return self
 
       Control: Control
       Music: Music

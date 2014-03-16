@@ -20,3 +20,7 @@ describe "Resource", ->
 
   it "should do some preloading", ->
     assert Resource.preload
+      progress: (p) ->
+        console.log p
+      complete: ->
+        console.log "badical"

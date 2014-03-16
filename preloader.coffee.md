@@ -52,7 +52,7 @@ TODO: Better error handling, duh!
 
         Object.keys(resources).forEach (type) ->
           Object.keys(resources[type]).forEach (name) ->
-            url = resource[name]
+            url = resources[type][name]
 
             loading += 1
 
