@@ -40,7 +40,7 @@ Example
     Music.play = (name) ->
       Music.playFromURL(resources.music[name])
 
-    self = 
+    self =
       add: (additionalResources) ->
         Object.keys(additionalResources).forEach (type) ->
           extend resources[type], additionalResources[type]
