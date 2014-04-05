@@ -1,5 +1,168 @@
 (function(pkg) {
-  // Expose a require for our package so scripts can access our modules
+  (function() {
+  var annotateSourceURL, cacheFor, circularGuard, defaultEntryPoint, fileSeparator, generateRequireFn, global, isPackage, loadModule, loadPackage, loadPath, normalizePath, rootModule, startsWith,
+    __slice = [].slice;
+
+  fileSeparator = '/';
+
+  global = window;
+
+  defaultEntryPoint = "main";
+
+  circularGuard = {};
+
+  rootModule = {
+    path: ""
+  };
+
+  loadPath = function(parentModule, pkg, path) {
+    var cache, localPath, module, normalizedPath;
+    if (startsWith(path, '/')) {
+      localPath = [];
+    } else {
+      localPath = parentModule.path.split(fileSeparator);
+    }
+    normalizedPath = normalizePath(path, localPath);
+    cache = cacheFor(pkg);
+    if (module = cache[normalizedPath]) {
+      if (module === circularGuard) {
+        throw "Circular dependency detected when requiring " + normalizedPath;
+      }
+    } else {
+      cache[normalizedPath] = circularGuard;
+      try {
+        cache[normalizedPath] = module = loadModule(pkg, normalizedPath);
+      } finally {
+        if (cache[normalizedPath] === circularGuard) {
+          delete cache[normalizedPath];
+        }
+      }
+    }
+    return module.exports;
+  };
+
+  normalizePath = function(path, base) {
+    var piece, result;
+    if (base == null) {
+      base = [];
+    }
+    base = base.concat(path.split(fileSeparator));
+    result = [];
+    while (base.length) {
+      switch (piece = base.shift()) {
+        case "..":
+          result.pop();
+          break;
+        case "":
+        case ".":
+          break;
+        default:
+          result.push(piece);
+      }
+    }
+    return result.join(fileSeparator);
+  };
+
+  loadPackage = function(pkg) {
+    var path;
+    path = pkg.entryPoint || defaultEntryPoint;
+    return loadPath(rootModule, pkg, path);
+  };
+
+  loadModule = function(pkg, path) {
+    var args, context, dirname, file, module, program, values;
+    if (!(file = pkg.distribution[path])) {
+      throw "Could not find file at " + path + " in " + pkg.name;
+    }
+    program = annotateSourceURL(file.content, pkg, path);
+    dirname = path.split(fileSeparator).slice(0, -1).join(fileSeparator);
+    module = {
+      path: dirname,
+      exports: {}
+    };
+    context = {
+      require: generateRequireFn(pkg, module),
+      global: global,
+      module: module,
+      exports: module.exports,
+      PACKAGE: pkg,
+      __filename: path,
+      __dirname: dirname
+    };
+    args = Object.keys(context);
+    values = args.map(function(name) {
+      return context[name];
+    });
+    Function.apply(null, __slice.call(args).concat([program])).apply(module, values);
+    return module;
+  };
+
+  isPackage = function(path) {
+    if (!(startsWith(path, fileSeparator) || startsWith(path, "." + fileSeparator) || startsWith(path, ".." + fileSeparator))) {
+      return path.split(fileSeparator)[0];
+    } else {
+      return false;
+    }
+  };
+
+  generateRequireFn = function(pkg, module) {
+    if (module == null) {
+      module = rootModule;
+    }
+    if (pkg.name == null) {
+      pkg.name = "ROOT";
+    }
+    if (pkg.scopedName == null) {
+      pkg.scopedName = "ROOT";
+    }
+    return function(path) {
+      var otherPackage;
+      if (isPackage(path)) {
+        if (!(otherPackage = pkg.dependencies[path])) {
+          throw "Package: " + path + " not found.";
+        }
+        if (otherPackage.name == null) {
+          otherPackage.name = path;
+        }
+        if (otherPackage.scopedName == null) {
+          otherPackage.scopedName = "" + pkg.scopedName + ":" + path;
+        }
+        return loadPackage(otherPackage);
+      } else {
+        return loadPath(module, pkg, path);
+      }
+    };
+  };
+
+  if (typeof exports !== "undefined" && exports !== null) {
+    exports.generateFor = generateRequireFn;
+  } else {
+    global.Require = {
+      generateFor: generateRequireFn
+    };
+  }
+
+  startsWith = function(string, prefix) {
+    return string.lastIndexOf(prefix, 0) === 0;
+  };
+
+  cacheFor = function(pkg) {
+    if (pkg.cache) {
+      return pkg.cache;
+    }
+    Object.defineProperty(pkg, "cache", {
+      value: {}
+    });
+    return pkg.cache;
+  };
+
+  annotateSourceURL = function(program, pkg, path) {
+    return "" + program + "\n//# sourceURL=" + pkg.scopedName + "/" + path;
+  };
+
+}).call(this);
+
+//# sourceURL=main.coffee
   window.require = Require.generateFor(pkg);
 })({
   "source": {
@@ -18,43 +181,54 @@
     "main.coffee.md": {
       "path": "main.coffee.md",
       "mode": "100644",
-      "content": "Resource\n========\n\nResource provides `Sound`, `Music`, and `Sprite` support.\n\nTODO: Spritesheets, Animations\n\nTODO: Uploading to S3\n\nExample\n-------\n\n>     Resource = require(\"resource\")\n>\n>     data = require \"./resources\"\n>     Resource.add(data)\n>\n>     {Music, Sprite, Sound} = Resource\n\n    resources =\n      images: {}\n      sounds: {}\n      music: {}\n\n    Sprite = require \"sprite\"\n    Sprite.loadByName = (name) ->\n      url = resources.images[name]\n\n      Sprite.fromURL(url)\n\n    {Control, Music, Sound} = require \"audio\"\n\n    Sound.play = (name) ->\n      Sound.playFromURL(resources.sounds[name])\n\n    Music.play = (name) ->\n      Music.playFromURL(resources.music[name])\n\n    Resource = \n      add: (additionalResources) ->\n        Object.keys(additionalResources).forEach (type) ->\n          extend resource[type], additionalResources[type]\n      Control: Control\n      Music: Music\n      Sprite: Sprite\n      Sound: Sound\n\n    module.exports = Resource\n\nHelpers\n-------\n\n    extend = (target, sources...) ->\n      for source in sources\n        for name of source\n          target[name] = source[name]\n\n      return target\n",
+      "content": "Resource\n========\n\nResource provides `Sound`, `Music`, and `Sprite` support.\n\nTODO: Include Preloader\n\nTODO: Spritesheets, Animations\n\nTODO: Uploading to S3\n\nExample\n-------\n\n>     Resource = require(\"resource\")\n>\n>     data = require \"./resources\"\n>     Resource.add(data)\n>\n>     {Music, Sprite, Sound} = Resource\n\n    Preloader = require \"./preloader\"\n\n    resources =\n      images: {}\n      sounds: {}\n      music: {}\n\n    Sprite = require \"sprite\"\n    Sprite.loadByName = (name) ->\n      url = resources.images[name]\n\n      Sprite.fromURL(url)\n\n    {Control, Music, Sound} = require \"audio\"\n\n    Sound.play = (name) ->\n      Sound.playFromURL(resources.sounds[name])\n\n    Music.play = (name) ->\n      Music.playFromURL(resources.music[name])\n\n    self =\n      add: (additionalResources) ->\n        Object.keys(additionalResources).forEach (type) ->\n          extend resources[type], additionalResources[type]\n\n        return self\n\n      preload: ({complete, progress}) ->\n        Preloader.preload\n          resources: resources\n          complete: complete\n          progress: progress\n\n        return self\n\n      Control: Control\n      Music: Music\n      Sprite: Sprite\n      Sound: Sound\n\n    module.exports = self\n\nHelpers\n-------\n\n    extend = (target, sources...) ->\n      for source in sources\n        for name of source\n          target[name] = source[name]\n\n      return target\n",
       "type": "blob"
     },
     "pixie.cson": {
       "path": "pixie.cson",
       "mode": "100644",
-      "content": "version: \"0.1.0-alpha.0\"\ndependencies:\n  sprite: \"distri/sprite:v0.3.0\"\n  audio: \"distri/audio:v0.2.0\"\n",
+      "content": "version: \"0.2.0\"\ndependencies:\n  sprite: \"distri/sprite:v0.3.0\"\n  audio: \"distri/audio:v0.2.0\"\n",
+      "type": "blob"
+    },
+    "preloader.coffee.md": {
+      "path": "preloader.coffee.md",
+      "mode": "100644",
+      "content": "Preloader\n=========\n\nPreload resources.\n\nTODO: Better error handling, duh!\n\n    Sprite = require \"sprite\"\n\n    preloadAudio = (url, success, error) ->\n      element = new Audio\n      element.onloadeddata = ->\n        success()\n      element.onerror = (e) ->\n        error(e)\n\n      softloadAudio(element, url)\n\n    softloadAudio = (element, url) ->\n      element.src = url\n      element.load()\n      element.volume = 0\n      element.play()\n\n      return element\n\n    module.exports =\n      preload: ({resources, complete, progress}) ->\n        loading = 0\n        loaded = 0\n\n        failedResource = (url) ->\n          # TODO: Something other than just logging and ignoring\n          console.error \"Failed to load:\", url\n          increment()\n\n        increment = ->\n          loaded += 1\n\n          progress?(loaded/loading)\n\n          if loaded is loading\n            complete()\n\n        loadedResource = (url) ->\n          console.log \"loaded:\", url\n          increment()\n\n        softLoaded = (url) ->\n          console.log \"soft loaded:\", url\n          increment()\n\n        Object.keys(resources).forEach (type) ->\n          Object.keys(resources[type]).forEach (name) ->\n            url = resources[type][name]\n\n            loading += 1\n\n            success = (resourceUrl) ->\n              # TODO: Grosso McNasty\n              resources.images[name] = resourceUrl if type is \"images\"\n              loadedResource(resourceUrl)\n\n            error = ->\n              failedResource(url)\n\n            if url.match /\\.(png|jpg|gif)$/\n              imagePreload(url, success, error)\n            else if url.match /\\.(mp3|wav|ogg)/\n              # TODO: Figure out how to reliable preload audio\n              softloadAudio(new Audio, url)\n              setTimeout ->\n                softLoaded(url)\n              , 0\n            else\n              console.warn \"unknown file type\", url\n              setTimeout loadedResource, 0\n\n    imagePreload = (url, success, error) ->\n      # TODO: There may be a better way to detect if we are running within\n      # a Chrome App\n      if chrome?.app?.window\n        console.log \"loading\", url\n        ajaxSuccess = (resourceUrl) ->\n          console.log resourceUrl\n          Sprite.load resourceUrl, ->\n            success(resourceUrl)\n\n        chromeAppImagePreload(url, ajaxSuccess, error)\n      else\n        regularImagePreload(url, success, error)\n\n    regularImagePreload = (url, success, error) ->\n      # TODO: Error handling for sprites\n      # NOTE: Using Sprite constructor because otherwise we get flickering\n\n      Sprite.load url, ->\n        success(url)\n\nChrome Apps can't display arbitrary image src urls, so we have this\nworkaround.\n\n    chromeAppImagePreload = (url, success, error) ->\n      xhr = new XMLHttpRequest()\n      xhr.open('GET', url)\n      xhr.responseType = 'blob'\n      xhr.onload = (e) ->\n        success window.URL.createObjectURL(@response)\n      xhr.onerror = error\n\n      xhr.send()\n",
       "type": "blob"
     },
     "test/main.coffee": {
       "path": "test/main.coffee",
       "mode": "100644",
-      "content": "Resource = require \"../main\"\n\ndescribe \"Resource\", ->\n  it \"should expose Control\", ->\n    assert Resource.Control\n\n  it \"should expose Music\", ->\n    assert Resource.Music\n\n  it \"should expose Sprite\", ->\n    assert Resource.Sprite\n\n  it \"should expose Sound\", ->\n    assert Resource.Sound\n\n  it \"should allow adding of resources\", ->\n    assert Resource.add\n",
+      "content": "Resource = require \"../main\"\n\ndescribe \"Resource\", ->\n  it \"should expose Control\", ->\n    assert Resource.Control\n\n  it \"should expose Music\", ->\n    assert Resource.Music\n\n  it \"should expose Sprite\", ->\n    assert Resource.Sprite\n\n  it \"should expose Sound\", ->\n    assert Resource.Sound\n\n  it \"should allow adding of resources\", ->\n    assert Resource.add\n      images:\n        duder: \"http://example.com/rad.png\"\n\n  it \"should do some preloading\", ->\n    assert Resource.preload\n      progress: (p) ->\n        console.log p\n      complete: ->\n        console.log \"badical\"\n",
       "type": "blob"
     }
   },
   "distribution": {
     "main": {
       "path": "main",
-      "content": "(function() {\n  var Control, Music, Resource, Sound, Sprite, extend, resources, _ref,\n    __slice = [].slice;\n\n  resources = {\n    images: {},\n    sounds: {},\n    music: {}\n  };\n\n  Sprite = require(\"sprite\");\n\n  Sprite.loadByName = function(name) {\n    var url;\n    url = resources.images[name];\n    return Sprite.fromURL(url);\n  };\n\n  _ref = require(\"audio\"), Control = _ref.Control, Music = _ref.Music, Sound = _ref.Sound;\n\n  Sound.play = function(name) {\n    return Sound.playFromURL(resources.sounds[name]);\n  };\n\n  Music.play = function(name) {\n    return Music.playFromURL(resources.music[name]);\n  };\n\n  Resource = {\n    add: function(additionalResources) {\n      return Object.keys(additionalResources).forEach(function(type) {\n        return extend(resource[type], additionalResources[type]);\n      });\n    },\n    Control: Control,\n    Music: Music,\n    Sprite: Sprite,\n    Sound: Sound\n  };\n\n  module.exports = Resource;\n\n  extend = function() {\n    var name, source, sources, target, _i, _len;\n    target = arguments[0], sources = 2 <= arguments.length ? __slice.call(arguments, 1) : [];\n    for (_i = 0, _len = sources.length; _i < _len; _i++) {\n      source = sources[_i];\n      for (name in source) {\n        target[name] = source[name];\n      }\n    }\n    return target;\n  };\n\n}).call(this);\n\n//# sourceURL=main.coffee",
+      "content": "(function() {\n  var Control, Music, Preloader, Sound, Sprite, extend, resources, self, _ref,\n    __slice = [].slice;\n\n  Preloader = require(\"./preloader\");\n\n  resources = {\n    images: {},\n    sounds: {},\n    music: {}\n  };\n\n  Sprite = require(\"sprite\");\n\n  Sprite.loadByName = function(name) {\n    var url;\n    url = resources.images[name];\n    return Sprite.fromURL(url);\n  };\n\n  _ref = require(\"audio\"), Control = _ref.Control, Music = _ref.Music, Sound = _ref.Sound;\n\n  Sound.play = function(name) {\n    return Sound.playFromURL(resources.sounds[name]);\n  };\n\n  Music.play = function(name) {\n    return Music.playFromURL(resources.music[name]);\n  };\n\n  self = {\n    add: function(additionalResources) {\n      Object.keys(additionalResources).forEach(function(type) {\n        return extend(resources[type], additionalResources[type]);\n      });\n      return self;\n    },\n    preload: function(_arg) {\n      var complete, progress;\n      complete = _arg.complete, progress = _arg.progress;\n      Preloader.preload({\n        resources: resources,\n        complete: complete,\n        progress: progress\n      });\n      return self;\n    },\n    Control: Control,\n    Music: Music,\n    Sprite: Sprite,\n    Sound: Sound\n  };\n\n  module.exports = self;\n\n  extend = function() {\n    var name, source, sources, target, _i, _len;\n    target = arguments[0], sources = 2 <= arguments.length ? __slice.call(arguments, 1) : [];\n    for (_i = 0, _len = sources.length; _i < _len; _i++) {\n      source = sources[_i];\n      for (name in source) {\n        target[name] = source[name];\n      }\n    }\n    return target;\n  };\n\n}).call(this);\n",
       "type": "blob"
     },
     "pixie": {
       "path": "pixie",
-      "content": "module.exports = {\"version\":\"0.1.0-alpha.0\",\"dependencies\":{\"sprite\":\"distri/sprite:v0.3.0\",\"audio\":\"distri/audio:v0.2.0\"}};",
+      "content": "module.exports = {\"version\":\"0.2.0\",\"dependencies\":{\"sprite\":\"distri/sprite:v0.3.0\",\"audio\":\"distri/audio:v0.2.0\"}};",
+      "type": "blob"
+    },
+    "preloader": {
+      "path": "preloader",
+      "content": "(function() {\n  var Sprite, chromeAppImagePreload, imagePreload, preloadAudio, regularImagePreload, softloadAudio;\n\n  Sprite = require(\"sprite\");\n\n  preloadAudio = function(url, success, error) {\n    var element;\n    element = new Audio;\n    element.onloadeddata = function() {\n      return success();\n    };\n    element.onerror = function(e) {\n      return error(e);\n    };\n    return softloadAudio(element, url);\n  };\n\n  softloadAudio = function(element, url) {\n    element.src = url;\n    element.load();\n    element.volume = 0;\n    element.play();\n    return element;\n  };\n\n  module.exports = {\n    preload: function(_arg) {\n      var complete, failedResource, increment, loaded, loadedResource, loading, progress, resources, softLoaded;\n      resources = _arg.resources, complete = _arg.complete, progress = _arg.progress;\n      loading = 0;\n      loaded = 0;\n      failedResource = function(url) {\n        console.error(\"Failed to load:\", url);\n        return increment();\n      };\n      increment = function() {\n        loaded += 1;\n        if (typeof progress === \"function\") {\n          progress(loaded / loading);\n        }\n        if (loaded === loading) {\n          return complete();\n        }\n      };\n      loadedResource = function(url) {\n        console.log(\"loaded:\", url);\n        return increment();\n      };\n      softLoaded = function(url) {\n        console.log(\"soft loaded:\", url);\n        return increment();\n      };\n      return Object.keys(resources).forEach(function(type) {\n        return Object.keys(resources[type]).forEach(function(name) {\n          var error, success, url;\n          url = resources[type][name];\n          loading += 1;\n          success = function(resourceUrl) {\n            if (type === \"images\") {\n              resources.images[name] = resourceUrl;\n            }\n            return loadedResource(resourceUrl);\n          };\n          error = function() {\n            return failedResource(url);\n          };\n          if (url.match(/\\.(png|jpg|gif)$/)) {\n            return imagePreload(url, success, error);\n          } else if (url.match(/\\.(mp3|wav|ogg)/)) {\n            softloadAudio(new Audio, url);\n            return setTimeout(function() {\n              return softLoaded(url);\n            }, 0);\n          } else {\n            console.warn(\"unknown file type\", url);\n            return setTimeout(loadedResource, 0);\n          }\n        });\n      });\n    }\n  };\n\n  imagePreload = function(url, success, error) {\n    var ajaxSuccess, _ref;\n    if (typeof chrome !== \"undefined\" && chrome !== null ? (_ref = chrome.app) != null ? _ref.window : void 0 : void 0) {\n      console.log(\"loading\", url);\n      ajaxSuccess = function(resourceUrl) {\n        console.log(resourceUrl);\n        return Sprite.load(resourceUrl, function() {\n          return success(resourceUrl);\n        });\n      };\n      return chromeAppImagePreload(url, ajaxSuccess, error);\n    } else {\n      return regularImagePreload(url, success, error);\n    }\n  };\n\n  regularImagePreload = function(url, success, error) {\n    return Sprite.load(url, function() {\n      return success(url);\n    });\n  };\n\n  chromeAppImagePreload = function(url, success, error) {\n    var xhr;\n    xhr = new XMLHttpRequest();\n    xhr.open('GET', url);\n    xhr.responseType = 'blob';\n    xhr.onload = function(e) {\n      return success(window.URL.createObjectURL(this.response));\n    };\n    xhr.onerror = error;\n    return xhr.send();\n  };\n\n}).call(this);\n",
       "type": "blob"
     },
     "test/main": {
       "path": "test/main",
-      "content": "(function() {\n  var Resource;\n\n  Resource = require(\"../main\");\n\n  describe(\"Resource\", function() {\n    it(\"should expose Control\", function() {\n      return assert(Resource.Control);\n    });\n    it(\"should expose Music\", function() {\n      return assert(Resource.Music);\n    });\n    it(\"should expose Sprite\", function() {\n      return assert(Resource.Sprite);\n    });\n    it(\"should expose Sound\", function() {\n      return assert(Resource.Sound);\n    });\n    return it(\"should allow adding of resources\", function() {\n      return assert(Resource.add);\n    });\n  });\n\n}).call(this);\n\n//# sourceURL=test/main.coffee",
+      "content": "(function() {\n  var Resource;\n\n  Resource = require(\"../main\");\n\n  describe(\"Resource\", function() {\n    it(\"should expose Control\", function() {\n      return assert(Resource.Control);\n    });\n    it(\"should expose Music\", function() {\n      return assert(Resource.Music);\n    });\n    it(\"should expose Sprite\", function() {\n      return assert(Resource.Sprite);\n    });\n    it(\"should expose Sound\", function() {\n      return assert(Resource.Sound);\n    });\n    it(\"should allow adding of resources\", function() {\n      return assert(Resource.add({\n        images: {\n          duder: \"http://example.com/rad.png\"\n        }\n      }));\n    });\n    return it(\"should do some preloading\", function() {\n      return assert(Resource.preload({\n        progress: function(p) {\n          return console.log(p);\n        },\n        complete: function() {\n          return console.log(\"badical\");\n        }\n      }));\n    });\n  });\n\n}).call(this);\n",
       "type": "blob"
     }
   },
   "progenitor": {
     "url": "http://strd6.github.io/editor/"
   },
-  "version": "0.1.0-alpha.0",
+  "version": "0.2.0",
   "entryPoint": "main",
   "repository": {
     "id": 17570235,
@@ -63,7 +237,7 @@
     "owner": {
       "login": "distri",
       "id": 6005125,
-      "avatar_url": "https://gravatar.com/avatar/192f3f168409e79c42107f081139d9f3?d=https%3A%2F%2Fidenticons.github.com%2Ff90c81ffc1498e260c820082f2e7ca5f.png&r=x",
+      "avatar_url": "https://avatars.githubusercontent.com/u/6005125?",
       "gravatar_id": "192f3f168409e79c42107f081139d9f3",
       "url": "https://api.github.com/users/distri",
       "html_url": "https://github.com/distri",
@@ -120,17 +294,17 @@
     "labels_url": "https://api.github.com/repos/distri/resource/labels{/name}",
     "releases_url": "https://api.github.com/repos/distri/resource/releases{/id}",
     "created_at": "2014-03-09T18:10:51Z",
-    "updated_at": "2014-03-10T17:31:15Z",
-    "pushed_at": "2014-03-10T17:31:15Z",
+    "updated_at": "2014-03-16T00:52:10Z",
+    "pushed_at": "2014-03-16T00:52:12Z",
     "git_url": "git://github.com/distri/resource.git",
     "ssh_url": "git@github.com:distri/resource.git",
     "clone_url": "https://github.com/distri/resource.git",
     "svn_url": "https://github.com/distri/resource",
     "homepage": null,
-    "size": 0,
+    "size": 248,
     "stargazers_count": 0,
     "watchers_count": 0,
-    "language": null,
+    "language": "CoffeeScript",
     "has_issues": true,
     "has_downloads": true,
     "has_wiki": true,
@@ -150,7 +324,7 @@
     "organization": {
       "login": "distri",
       "id": 6005125,
-      "avatar_url": "https://gravatar.com/avatar/192f3f168409e79c42107f081139d9f3?d=https%3A%2F%2Fidenticons.github.com%2Ff90c81ffc1498e260c820082f2e7ca5f.png&r=x",
+      "avatar_url": "https://avatars.githubusercontent.com/u/6005125?",
       "gravatar_id": "192f3f168409e79c42107f081139d9f3",
       "url": "https://api.github.com/users/distri",
       "html_url": "https://github.com/distri",

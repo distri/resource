@@ -2,7 +2,7 @@
 
 <html>
 <head>
-  <title>main</title>
+  <title>preloader</title>
   <meta http-equiv="content-type" content="text/html; charset=UTF-8">
   <meta name="viewport" content="width=device-width, target-densitydpi=160dpi, initial-scale=1.0; maximum-scale=1.0; user-scalable=0;">
   <link rel="stylesheet" media="all" href="http://strd6.github.io/cdn/parallel/docco.css" />
@@ -18,7 +18,7 @@
               <div class="pilwrap">
                 <a class="pilcrow" href="#section-1">&#182;</a>
               </div>
-              <h1 id="resource">Resource</h1>
+              <h1 id="preloader">Preloader</h1>
 
             </div>
             <div class="content"><pre><code class="lang-coffeescript">
@@ -32,15 +32,101 @@
               <div class="pilwrap">
                 <a class="pilcrow" href="#section-2">&#182;</a>
               </div>
-              <p>Resource provides <code>Sound</code>, <code>Music</code>, and <code>Sprite</code> support.</p>
-<p>TODO: Include Preloader</p>
-<p>TODO: Spritesheets, Animations</p>
-<p>TODO: Uploading to S3</p>
-<h2 id="example">Example</h2>
+              <p>Preload resources.</p>
+<p>TODO: Better error handling, duh!</p>
 
             </div>
-            <div class="content"><pre><code class="lang-coffeescript">
-</code></pre>
+            <div class="content"><pre><code class="lang-coffeescript">Sprite = require <span class="string">"sprite"</span>
+
+<span class="function"><span class="title">preloadAudio</span></span> = (url, success, error) -&gt;
+  element = <span class="keyword">new</span> Audio
+  element.<span class="function"><span class="title">onloadeddata</span></span> = -&gt;
+    success()
+  element.<span class="function"><span class="title">onerror</span></span> = (e) -&gt;
+    error(e)
+
+  softloadAudio(element, url)
+
+<span class="function"><span class="title">softloadAudio</span></span> = (element, url) -&gt;
+  element.src = url
+  element.load()
+  element.volume = <span class="number">0</span>
+  element.play()
+
+  <span class="keyword">return</span> element
+
+module.exports =
+  preload: ({resources, complete, progress}) -&gt;
+    loading = <span class="number">0</span>
+    loaded = <span class="number">0</span>
+
+    <span class="function"><span class="title">failedResource</span></span> = (url) -&gt;
+      <span class="comment"># TODO: Something other than just logging and ignoring</span>
+      console.error <span class="string">"Failed to load:"</span>, url
+      increment()
+
+    <span class="function"><span class="title">increment</span></span> = -&gt;
+      loaded += <span class="number">1</span>
+
+      progress?(loaded/loading)
+
+      <span class="keyword">if</span> loaded <span class="keyword">is</span> loading
+        complete()
+
+    <span class="function"><span class="title">loadedResource</span></span> = (url) -&gt;
+      console.log <span class="string">"loaded:"</span>, url
+      increment()
+
+    <span class="function"><span class="title">softLoaded</span></span> = (url) -&gt;
+      console.log <span class="string">"soft loaded:"</span>, url
+      increment()
+
+    Object.keys(resources).forEach (type) -&gt;
+      Object.keys(resources[type]).forEach (name) -&gt;
+        url = resources[type][name]
+
+        loading += <span class="number">1</span>
+
+        <span class="function"><span class="title">success</span></span> = (resourceUrl) -&gt;
+          <span class="comment"># TODO: Grosso McNasty</span>
+          resources.images[name] = resourceUrl <span class="keyword">if</span> type <span class="keyword">is</span> <span class="string">"images"</span>
+          loadedResource(resourceUrl)
+
+        <span class="function"><span class="title">error</span></span> = -&gt;
+          failedResource(url)
+
+        <span class="keyword">if</span> url.match <span class="regexp">/\.(png|jpg|gif)$/</span>
+          imagePreload(url, success, error)
+        <span class="keyword">else</span> <span class="keyword">if</span> url.match <span class="regexp">/\.(mp3|wav|ogg)/</span>
+          <span class="comment"># TODO: Figure out how to reliable preload audio</span>
+          softloadAudio(<span class="keyword">new</span> Audio, url)
+          setTimeout -&gt;
+            softLoaded(url)
+          , <span class="number">0</span>
+        <span class="keyword">else</span>
+          console.warn <span class="string">"unknown file type"</span>, url
+          setTimeout loadedResource, <span class="number">0</span>
+
+<span class="function"><span class="title">imagePreload</span></span> = (url, success, error) -&gt;
+  <span class="comment"># TODO: There may be a better way to detect if we are running within</span>
+  <span class="comment"># a Chrome App</span>
+  <span class="keyword">if</span> chrome?.app?.window
+    console.log <span class="string">"loading"</span>, url
+    <span class="function"><span class="title">ajaxSuccess</span></span> = (resourceUrl) -&gt;
+      console.log resourceUrl
+      Sprite.load resourceUrl, -&gt;
+        success(resourceUrl)
+
+    chromeAppImagePreload(url, ajaxSuccess, error)
+  <span class="keyword">else</span>
+    regularImagePreload(url, success, error)
+
+<span class="function"><span class="title">regularImagePreload</span></span> = (url, success, error) -&gt;
+  <span class="comment"># TODO: Error handling for sprites</span>
+  <span class="comment"># NOTE: Using Sprite constructor because otherwise we get flickering</span>
+
+  Sprite.load url, -&gt;
+    success(url)</code></pre>
 </div>
         </li>
         
@@ -50,89 +136,19 @@
               <div class="pilwrap">
                 <a class="pilcrow" href="#section-3">&#182;</a>
               </div>
-              <blockquote>
-<pre><code>Resource = require(&quot;resource&quot;)
-
-data = require &quot;./resources&quot;
-Resource.add(data)
-
-{Music, Sprite, Sound} = Resource</code></pre>
-</blockquote>
+              <p>Chrome Apps can&#39;t display arbitrary image src urls, so we have this
+workaround.</p>
 
             </div>
-            <div class="content"><pre><code class="lang-coffeescript">Preloader = require <span class="string">"./preloader"</span>
+            <div class="content"><pre><code class="lang-coffeescript"><span class="function"><span class="title">chromeAppImagePreload</span></span> = (url, success, error) -&gt;
+  xhr = <span class="keyword">new</span> XMLHttpRequest()
+  xhr.open(<span class="string">'GET'</span>, url)
+  xhr.responseType = <span class="string">'blob'</span>
+  xhr.<span class="function"><span class="title">onload</span></span> = (e) -&gt;
+    success window.URL.createObjectURL(<span class="property">@response</span>)
+  xhr.onerror = error
 
-resources =
-  images: {}
-  sounds: {}
-  music: {}
-
-Sprite = require <span class="string">"sprite"</span>
-Sprite.<span class="function"><span class="title">loadByName</span></span> = (name) -&gt;
-  url = resources.images[name]
-
-  Sprite.fromURL(url)
-
-{Control, Music, Sound} = require <span class="string">"audio"</span>
-
-Sound.<span class="function"><span class="title">play</span></span> = (name) -&gt;
-  Sound.playFromURL(resources.sounds[name])
-
-Music.<span class="function"><span class="title">play</span></span> = (name) -&gt;
-  Music.playFromURL(resources.music[name])
-
-self =
-  add: (additionalResources) -&gt;
-    Object.keys(additionalResources).forEach (type) -&gt;
-      extend resources[type], additionalResources[type]
-
-    <span class="keyword">return</span> self
-
-  preload: ({complete, progress}) -&gt;
-    Preloader.preload
-      resources: resources
-      complete: complete
-      progress: progress
-
-    <span class="keyword">return</span> self
-
-  Control: Control
-  Music: Music
-  Sprite: Sprite
-  Sound: Sound
-
-module.exports = self</code></pre>
-</div>
-        </li>
-        
-        
-        <li id="section-4">
-            <div class="annotation">
-              <div class="pilwrap">
-                <a class="pilcrow" href="#section-4">&#182;</a>
-              </div>
-              <h2 id="helpers">Helpers</h2>
-
-            </div>
-            <div class="content"><pre><code class="lang-coffeescript">
-</code></pre>
-</div>
-        </li>
-        
-        
-        <li id="section-5">
-            <div class="annotation">
-              <div class="pilwrap">
-                <a class="pilcrow" href="#section-5">&#182;</a>
-              </div>
-              
-            </div>
-            <div class="content"><pre><code class="lang-coffeescript"><span class="function"><span class="title">extend</span></span> = (target, sources...) -&gt;
-  <span class="keyword">for</span> source <span class="keyword">in</span> sources
-    <span class="keyword">for</span> name <span class="keyword">of</span> source
-      target[name] = source[name]
-
-  <span class="keyword">return</span> target</code></pre>
+  xhr.send()</code></pre>
 </div>
         </li>
         
