@@ -95,7 +95,7 @@ module.exports =
         <span class="function"><span class="title">error</span></span> = -&gt;
           failedResource(url)
 
-        <span class="keyword">if</span> url.match <span class="regexp">/\.(png|jpg|gif)$/</span> <span class="keyword">or</span> type <span class="keyword">is</span> <span class="string">"images"</span>
+        <span class="keyword">if</span> url.match(<span class="regexp">/\.(png|jpg|gif)$/</span>) <span class="keyword">or</span> type <span class="keyword">is</span> <span class="string">"images"</span>
           imagePreload(url, success, error)
         <span class="keyword">else</span> <span class="keyword">if</span> url.match <span class="regexp">/\.(mp3|wav|ogg)/</span>
           <span class="comment"># TODO: Figure out how to reliable preload audio</span>
