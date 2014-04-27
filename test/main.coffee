@@ -18,9 +18,15 @@ describe "Resource", ->
       images:
         duder: "http://example.com/rad.png"
 
+    assert Resource.add
+      images:
+        test2: "http://example.com/aeuheuerorcuheue"
+
   it "should do some preloading", ->
     assert Resource.preload
       progress: (p) ->
         console.log p
       complete: ->
         console.log "badical"
+
+  
