@@ -64,7 +64,7 @@ TODO: Better error handling, duh!
             error = ->
               failedResource(url)
 
-            if url.match /\.(png|jpg|gif)$/
+            if url.match /\.(png|jpg|gif)$/ or type is "images"
               imagePreload(url, success, error)
             else if url.match /\.(mp3|wav|ogg)/
               # TODO: Figure out how to reliable preload audio
